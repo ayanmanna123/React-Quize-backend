@@ -7,8 +7,14 @@ const app = express()
 const port = 5000
 app.use(express.json())
 
+const corsOptions = {
+  origin: process.env.NEXT_PUBLIC_HOST, // Allow specific origin
+  methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+};
+app.use(cors(corsOptions));
 
-app.use(cors())
+ 
 app.use(express.json())
 
 // Available Routes

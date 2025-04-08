@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const fetchUser = require('../middleware/fetchUser');
 const QuizReport = require('../models/Result');
-
+const dotenv = require('dotenv');
+dotenv.config();
 // Save report (protected route)
 router.post('/', fetchUser, async (req, res) => {
   try {
