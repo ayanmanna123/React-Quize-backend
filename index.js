@@ -1,27 +1,30 @@
 const connectToMongo = require('./db');
-const express = require('express')
-var cors = require('cors') 
+const express = require('express');
+const cors = require('cors');
 
 connectToMongo();
-const app = express()
-const port = 5000
-app.use(express.json())
+const app = express();
+const port = 5000;
 
+// Middleware to parse JSON
+app.use(express.json());
+
+// CORS configuration to allow frontend access (both local and deployed)
 const corsOptions = {
-  origin: process.env.NEXT_PUBLIC_HOST, // Allow specific origin
-  methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
-  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+  origin: [
+    "http://localhost:3000",
+    "https://react-quize-frontend-git-main-ayan-mannas-projects.vercel.app"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 
- 
-app.use(express.json())
+// API Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/report', require('./routes/store'));
 
-// Available Routes
-app.use('/api/auth', require('./routes/auth'))
-app.use('/api/report', require('./routes/store')); 
-
-
+// Start the server
 app.listen(port, () => {
-  console.log(`iNotebook backend listening at http://localhost:${port}`)
-})
+  console.log(`Quiz backend listening at http://localhost:${port}`);
+});
