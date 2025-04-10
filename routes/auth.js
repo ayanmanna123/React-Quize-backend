@@ -4,6 +4,8 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+
 const sendVerificationEmail = require("../utils/mailer");
 const fetchUser = require("../middleware/fetchUser");
 const dotenv = require("dotenv");
@@ -103,40 +105,54 @@ router.post("/getuser", fetchUser, async (req, res) => {
   }
 });
 
-// ✅ ROUTE 4: Send Email Verification Code
-router.post("/send-code", async (req, res) => {
+// ✅ ROUTE: Send Verification Code to User Email
+router.post("/send-verification-code", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
+  }
+
   try {
-    const { email } = req.body;
-    console.log("Requested email:", email); // ✅ Add this
+    // Generate 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeExpires = Date.now() + 5 * 60 * 1000; // expires in 5 minutes
 
-    // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000);
+    // Update user or create if not exists
+    const user = await User.findOneAndUpdate(
+      { email },
+      {
+        verificationCode: code,
+        codeExpires,
+        isVerified: false,
+      },
+      { upsert: true, new: true }
+    );
 
-    // Create reusable transporter using Nodemailer
+    // Send email using Nodemailer
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER, // your Gmail
-        pass: process.env.EMAIL_PASS, // your App password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
-    // Send mail
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"Quiz App" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Your verification code",
-      text: `Your verification code is ${code}`,
+      subject: "Your Verification Code",
+      text: `Your verification code is: ${code}`,
     });
 
-    console.log("Email sent:", info.response); // ✅ Log success
-
-    res.json({ success: true, message: "Code sent", code }); // optional: send code for testing
+    return res.json({ success: true, message: "Verification code sent to your email" });
   } catch (error) {
-    console.error("Error in /send-code:", error); // ✅ Log error
-    res.status(500).json({ success: false, message: "Failed to send code" });
+    console.error("Error sending verification code:", error);
+    return res.status(500).json({ success: false, message: "Failed to send code" });
   }
 });
+
+
 
 
 // ✅ ROUTE 5: Verify Email Code
